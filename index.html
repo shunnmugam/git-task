@@ -166,7 +166,14 @@
 					if (this.readyState == 4 && this.status == 200) {
 						var result = JSON.parse(this.responseText);
 					    that.repos = result.items;
-					    that.printRepos();
+					    if(that.repos.length === 0) {
+					    	resultContainer.innerHTML = "No Data";
+					    } else {
+					    	that.printRepos();
+					    }
+					    
+					} else if(this.readyState == 4 && this.status!== 200) {
+						resultContainer.innerHTML = "Something Went Wrong";
 					}
 				};
 				xhttp.open("GET", this.apiUrl, true);
@@ -214,6 +221,14 @@
 			document.getElementById("prev-btn").addEventListener('click',function(){
 				repoObj.goPrev();
 			});
+
+			searchBar.addEventListener("keyup", function(event) {
+			  if (event.keyCode === 13) {
+			    event.preventDefault();
+			    document.getElementById("search-button").click();
+			  }
+			});
+
 
 
 		}();
