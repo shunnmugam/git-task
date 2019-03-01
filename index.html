@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Task</title>
+	<meta charset="utf-8">
+  	<meta name="viewport" content="width=device-width, initial-scale=1">
+  	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+  	<style type="text/css">
+  		:root {
+  			--v-blue : #3d9eff;
+  		}
+  		body {
+  			background-color: #f0f5f9;
+  		}
+  		.containers {
+  			border: 1px solid var(--v-blue);
+  			border-radius: 5px;
+  		}
+  		.title-bar {
+  			background-color: var(--v-blue);
+  			color: white;
+
+  		}
+  		.title-bar h5 {
+  			font-size: 12px;
+  		}
+  		#search-bar {
+		    width: 225px;
+		    float: left;
+		    height: 29px;
+  		}
+  		#search-button {
+  			background-color: var(--v-blue);
+		    height: 29px;
+		    color: white;
+		    padding: 0 14px;
+		    font-size: 12px;
+  		}
+  		.repo-card {
+  			padding-bottom: 43px !important;
+  		}
+  		img.repo-img {
+		    width: 150px;
+	        border-radius: 50%;
+		}
+		.result {
+		    margin: 5px 0px;
+		}
+		.stars-details {
+			display: flex;
+		    justify-content: space-around;
+		    margin: 15px 0px;
+		}
+		span.star-detail {
+		    border: 1px solid #c5c5c5;
+		    border-radius: 11px;
+		    padding: 1px 10px;
+		    font-size: 12px;
+		    font-weight: 600;
+		}
+		.view-more-btn {
+        	position: absolute;
+		    bottom: 0;
+		    text-align: center;
+		    width: 100%;
+		    left: 0;
+		    padding: 10px 0px;
+		    cursor: pointer;
+		    text-decoration: none !important;
+		    color: black;
+  
+		}
+		.view-more-text {
+			    padding: 11px;
+		    border-top: 1px solid #c5c5c5;
+		     text-decoration: none;
+		}
+		.view-more-btn:hover {
+			background-color: var(--v-blue);
+		}
+		.view-more-btn:hover .view-more-text {
+			border: unset;
+		}
+		.pagination-container .btn{
+			background-color: var(--v-blue);
+			color : white;
+		}
+	
+  	</style>
+</head>
+<body>
+	<div id="main-container" class="container pt-2 pb-2">
+		<div class="row mb-2 containers" id="search-container">
+			<div class="col-12 title-bar pt-2 pb-1">
+				<h5>Git Repo Search Filter</h5>
+			</div>
+			<div class="col-12 p-2">
+				<input type="text" id="search-bar" class="form-control mr-4" name="search-bar" id="search-bar" value="TEST" />
+				<button type="button" id="search-button" class="btn">Search</button>
+			</div>
+		</div>
+		<div class="row containers" id="result-container">
+			<div class="col-12 title-bar pt-2 pb-1">
+				<h5>Repo Search Result</h5>
+			</div>
+			<div class="row m-0 pb-3 pt-3">
+				<div class="result-groups row m-0 flex-wrap" id="result-group">
+					Loading....
+				</div>
+			</div>
+			<div class="col-12 mb-2 pagination-container">
+				<button type="button" class="btn btn-sm" id="prev-btn">Prev</button>
+				<button type="button" class="btn btn-sm" id="next-btn">Next</button>
+			</div>
+		</div>
+	</div>
+
+	<script type="text/javascript">
+		!function(){
+			var searchBar = document.getElementById("search-bar");
+			var resultContainer = document.getElementById("result-group");
+			var repoClass = function(config) {
+				var defaultConfig = {
+					paginationDetails : {
+						totalCounts : 0,
+						currentPage : 1
+					}
+				};
+				config = config || {};
+				this.config = Object.assign(defaultConfig,config);
+
+				//this.paginationDetails = Object.assign(defaultConfig.paginationDetails,config.paginationDetails);
+				
+
+				this.repos = [];
+
+			};
+			/* go next page */
+			repoClass.prototype.goNext = function() {
+				var currentPage = this.config.paginationDetails.currentPage;
+				this.config.paginationDetails.currentPage = currentPage+1;
+				this.getRepos();
+			}
+			/* go prev page */
+			repoClass.prototype.goPrev = function() {
+
+				var currentPage = this.config.paginationDetails.currentPage;
+				if(currentPage>1) {
+					this.config.paginationDetails.currentPage = currentPage-1;
+					this.getRepos();
+				}
+			}
+			/* search */
+			repoClass.prototype.search = function() {
+				this.config.paginationDetails.currentPage = 1;
+				this.getRepos();
+			}
+			/* get repos */
+			repoClass.prototype.getRepos = function() {
+				resultContainer.innerHTML = "Loading...";
+				var searchKeyword = searchBar.value;
+				this.apiUrl = "https://api.github.com/search/repositories?q="+searchKeyword+"&per_page=12&page="+this.config.paginationDetails.currentPage;
+				var xhttp = new XMLHttpRequest();
+				var that = this;
+				xhttp.onreadystatechange = function() {
+					if (this.readyState == 4 && this.status == 200) {
+						var result = JSON.parse(this.responseText);
+					    that.repos = result.items;
+					    that.printRepos();
+					}
+				};
+				xhttp.open("GET", this.apiUrl, true);
+				xhttp.send();
+			};
+			/* print repos */
+			repoClass.prototype.printRepos = function() {
+				
+				var items = this.repos;
+				var htmlContent = "";
+				for (var i = 0; i < items.length; i++) {
+					var item = items[i];
+					htmlContent += '<div class="result col-12 col-sm-6 col-md-4 text-center">';
+					htmlContent += '<div class="repo-card bg-white p-4 card h-100">';
+					htmlContent += '<div class="image-container"><img src="'+item.owner.avatar_url+'" class="repo-img img" /></div>';
+					htmlContent += '<div class="repo-details">';
+					htmlContent += '<h5 class="repo-name">'+item.name+'</h5>';
+					htmlContent += '<div class="stars-details">';
+					htmlContent += '<span class="star-detail">'+item.stargazers_count+'</span>'
+					htmlContent += '<span class="star-detail">Fork '+item.forks_count+'</span>'
+					htmlContent += '<span class="star-detail"> open issues '+item.open_issues_count+'</span>'
+					htmlContent += '</div>';
+					htmlContent += '<div class="repo-desc">'
+					htmlContent += '<p class="description">'+item.description+'</p>'
+					htmlContent += '</div>';
+					htmlContent += '<a class="view-more-btn" href="'+item.html_url+'"><span class="view-more-text">View More</span></a>'
+					htmlContent += '</div>';
+					htmlContent += '</div>';
+					htmlContent += '</div>';
+					
+				}
+				resultContainer.innerHTML = htmlContent;
+			};
+			var repoObj = new repoClass();
+			repoObj.getRepos();
+
+			document.getElementById("search-button").addEventListener('click',function() {
+				repoObj.search();
+			});
+
+			document.getElementById("next-btn").addEventListener('click',function(){
+				repoObj.goNext();
+			});
+
+			document.getElementById("prev-btn").addEventListener('click',function(){
+				repoObj.goPrev();
+			});
+
+
+		}();
+	</script>
+</body>
+</html>
